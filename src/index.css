@@ -187,7 +187,7 @@
 
   .kpi-card {
     @apply financial-card p-6;
-    @apply hover:scale-105 hover:shadow-glow/20;
+    @apply hover:scale-105 hover:shadow-lg;
   }
 
   /* Chat Interface */
@@ -221,7 +221,7 @@
     @apply bg-gradient-to-r from-primary via-primary-glow to-primary-dark;
     @apply text-primary-foreground font-semibold;
     @apply rounded-lg px-6 py-3;
-    @apply shadow-lg hover:shadow-glow/30;
+    @apply shadow-lg hover:shadow-glow;
     @apply transform hover:scale-105 active:scale-95;
     @apply transition-all duration-200;
   }
@@ -229,19 +229,19 @@
   .btn-success {
     @apply bg-gradient-to-r from-success to-success;
     @apply text-success-foreground;
-    @apply hover:shadow-lg hover:shadow-success/20;
+    @apply hover:shadow-lg;
   }
 
   .btn-warning {
     @apply bg-gradient-to-r from-warning to-warning;
     @apply text-warning-foreground;
-    @apply hover:shadow-lg hover:shadow-warning/20;
+    @apply hover:shadow-lg;
   }
 
   .btn-danger {
     @apply bg-gradient-to-r from-danger to-danger;
     @apply text-danger-foreground;
-    @apply hover:shadow-lg hover:shadow-danger/20;
+    @apply hover:shadow-lg;
   }
 }
 
