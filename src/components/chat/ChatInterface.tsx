@@ -1,12 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, X, MessageCircle, Loader2 } from 'lucide-react';
+import { Send, X, MessageCircle, Loader2, Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useChat } from '@/contexts/ChatContext';
 import { useFinancial } from '@/contexts/FinancialContext';
 import { InsightEngine } from '@/utils/insightEngine';
 import { Badge } from '@/components/ui/badge';
+import { useVoiceInput, useTextToSpeech } from '@/hooks/useVoiceInput';
 
 interface ChatInterfaceProps {
   isOpen: boolean;
@@ -18,6 +19,37 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ isOpen, onClose }) => {
   const { messages, isTyping, addMessage, setTyping } = useChat();
   const { getFilteredData, permissions } = useFinancial();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Voice functionality
+  const {
+    isListening,
+    isSupported: voiceSupported,
+    transcript,
+    startListening,
+    stopListening,
+    resetTranscript,
+    error: voiceError
+  } = useVoiceInput({
+    continuous: false,
+    interimResults: true,
+    onResult: (transcript, isFinal) => {
+      if (isFinal && transcript.trim()) {
+        setInput(transcript.trim());
+        resetTranscript();
+      }
+    }
+  });
+
+  const {
+    speak,
+    cancel: cancelSpeech,
+    isSpeaking,
+    isSupported: ttsSupported
+  } = useTextToSpeech({
+    rate: 0.9,
+    pitch: 1,
+    volume: 0.8
+  });
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -57,6 +89,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ isOpen, onClose }) => {
           content: response,
           dataUsed
         });
+
+        // Optionally speak the response
+        if (ttsSupported && response.length < 200) {
+          speak(response);
+        }
       } catch (error) {
         addMessage({
           role: 'assistant',
@@ -225,22 +262,60 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ isOpen, onClose }) => {
             {/* Input */}
             <div className="p-4 border-t border-border">
               <form onSubmit={handleSubmit} className="flex space-x-2">
-                <Input
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  placeholder="Ask about your finances..."
-                  disabled={isTyping}
-                  className="flex-1"
-                />
+                <div className="flex-1 relative">
+                  <Input
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    placeholder={isListening ? "Listening..." : "Ask about your finances..."}
+                    disabled={isTyping || isListening}
+                    className="pr-10"
+                  />
+                  {transcript && !input && (
+                    <div className="absolute inset-0 px-3 py-2 text-muted-foreground italic">
+                      {transcript}
+                    </div>
+                  )}
+                </div>
+                
+                {/* Voice Input Button */}
+                {voiceSupported && (
+                  <Button
+                    type="button"
+                    variant={isListening ? "destructive" : "outline"}
+                    size="sm"
+                    onClick={isListening ? stopListening : startListening}
+                    disabled={isTyping}
+                  >
+                    {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                  </Button>
+                )}
+
+                {/* TTS Control Button */}
+                {ttsSupported && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={isSpeaking ? cancelSpeech : undefined}
+                    disabled={!isSpeaking}
+                  >
+                    {isSpeaking ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                  </Button>
+                )}
+                
                 <Button 
                   type="submit" 
-                  disabled={!input.trim() || isTyping}
+                  disabled={!input.trim() || isTyping || isListening}
                   size="sm"
                   className="btn-hero"
                 >
                   <Send className="w-4 h-4" />
                 </Button>
               </form>
+              
+              {voiceError && (
+                <p className="text-xs text-danger mt-2">{voiceError}</p>
+              )}
             </div>
           </motion.div>
         </>

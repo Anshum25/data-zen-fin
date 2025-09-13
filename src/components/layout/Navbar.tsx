@@ -1,8 +1,9 @@
 import React from 'react';
-import { Moon, Sun, DollarSign, Shield } from 'lucide-react';
+import { Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTheme } from 'next-themes';
 import { motion } from 'framer-motion';
+import FinanceAILogo from '@/components/icons/FinanceAILogo';
 
 interface NavbarProps {
   onTogglePermissions: () => void;
@@ -21,23 +22,7 @@ const Navbar: React.FC<NavbarProps> = ({ onTogglePermissions, onToggleChat }) =>
     >
       <div className="flex items-center justify-between max-w-7xl mx-auto">
         {/* Logo */}
-        <motion.div 
-          className="flex items-center space-x-3"
-          whileHover={{ scale: 1.05 }}
-        >
-          <div className="relative">
-            <div className="w-10 h-10 gradient-primary rounded-xl flex items-center justify-center">
-              <DollarSign className="w-6 h-6 text-primary-foreground" />
-            </div>
-            <div className="absolute -inset-1 gradient-primary rounded-xl blur opacity-30"></div>
-          </div>
-          <div className="hidden sm:block">
-            <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
-              FinanceAI
-            </h1>
-            <p className="text-xs text-muted-foreground -mt-1">Your AI Financial Assistant</p>
-          </div>
-        </motion.div>
+        <FinanceAILogo size="md" showText={true} />
 
         {/* Center Actions */}
         <div className="flex items-center space-x-2">
@@ -45,7 +30,7 @@ const Navbar: React.FC<NavbarProps> = ({ onTogglePermissions, onToggleChat }) =>
             variant="ghost"
             size="sm"
             onClick={onToggleChat}
-            className="hidden md:flex items-center space-x-2 text-muted-foreground hover:text-foreground"
+            className="hidden md:flex items-center space-x-2 text-muted-foreground hover:text-foreground transition-colors"
           >
             <span>Ask AI</span>
           </Button>
@@ -54,10 +39,10 @@ const Navbar: React.FC<NavbarProps> = ({ onTogglePermissions, onToggleChat }) =>
             variant="outline"
             size="sm"
             onClick={onTogglePermissions}
-            className="flex items-center space-x-2"
+            className="flex items-center space-x-2 hover-scale"
           >
-            <Shield className="w-4 h-4" />
-            <span className="hidden sm:inline">Privacy</span>
+            <span className="hidden sm:inline">Privacy Settings</span>
+            <span className="sm:hidden">Privacy</span>
           </Button>
         </div>
 

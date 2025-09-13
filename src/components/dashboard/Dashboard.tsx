@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
   TrendingUp, 
@@ -11,9 +11,14 @@ import {
 } from 'lucide-react';
 import KPICard from './KPICard';
 import ExpenseChart from './ExpenseChart';
+import ExpenseBreakdownChart from '@/components/charts/ExpenseBreakdownChart';
+import AIInsightsModal from '@/components/modals/AIInsightsModal';
+import GoalsModal from '@/components/goals/GoalsModal';
 import { useFinancial } from '@/contexts/FinancialContext';
+import { useChat } from '@/contexts/ChatContext';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { PDFReportGenerator } from '@/utils/pdfGenerator';
 
 interface DashboardProps {
   onTogglePermissions: () => void;
@@ -21,7 +26,11 @@ interface DashboardProps {
 
 const Dashboard: React.FC<DashboardProps> = ({ onTogglePermissions }) => {
   const { getFilteredData, permissions } = useFinancial();
+  const { addMessage } = useChat();
   const data = getFilteredData();
+  
+  const [showAIInsights, setShowAIInsights] = useState(false);
+  const [showGoals, setShowGoals] = useState(false);
 
   // Calculate KPIs
   const totalAssets = data.assets?.reduce((sum, asset) => sum + asset.value, 0) || 0;
@@ -42,6 +51,23 @@ const Dashboard: React.FC<DashboardProps> = ({ onTogglePermissions }) => {
   // Calculate investment gains
   const totalInvestmentValue = data.investments?.reduce((sum, inv) => sum + inv.totalValue, 0) || 0;
   const totalInvestmentGains = data.investments?.reduce((sum, inv) => sum + inv.gainLoss, 0) || 0;
+
+  const handleGeneratePDF = async () => {
+    try {
+      const pdfGenerator = new PDFReportGenerator(data);
+      await pdfGenerator.generateMonthlyReport();
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+    }
+  };
+
+  const handleAskAI = (question: string) => {
+    addMessage({
+      role: 'user',
+      content: question
+    });
+    // The parent component should handle opening the chat
+  };
 
   if (!hasPermissions) {
     return (
@@ -201,28 +227,36 @@ const Dashboard: React.FC<DashboardProps> = ({ onTogglePermissions }) => {
         {/* Charts and Insights */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {permissions.transactions && data.transactions && (
-            <ExpenseChart transactions={data.transactions} />
+            <>
+              <ExpenseChart transactions={data.transactions} />
+              <ExpenseBreakdownChart transactions={data.transactions} />
+            </>
           )}
           
-          {/* Placeholder for additional charts */}
-          <motion.div
-            className="financial-card p-6"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-          >
-            <h3 className="text-lg font-semibold text-foreground mb-4">
-              Savings Forecast
-            </h3>
-            <div className="h-80 flex items-center justify-center bg-gradient-to-br from-success/5 to-success/10 rounded-lg">
-              <div className="text-center">
-                <TrendingUp className="w-12 h-12 text-success mx-auto mb-4" />
-                <p className="text-muted-foreground">
-                  Savings trend analysis coming soon
-                </p>
+          {/* Savings Forecast - Enhanced */}
+          {(!permissions.transactions || !data.transactions) && (
+            <motion.div
+              className="financial-card p-6"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+            >
+              <h3 className="text-lg font-semibold text-foreground mb-4">
+                Savings Forecast
+              </h3>
+              <div className="h-80 flex items-center justify-center bg-gradient-to-br from-success/5 to-success/10 rounded-lg">
+                <div className="text-center">
+                  <TrendingUp className="w-12 h-12 text-success mx-auto mb-4" />
+                  <p className="text-muted-foreground mb-2">
+                    Savings trend analysis
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Enable transaction access to see your savings forecast
+                  </p>
+                </div>
               </div>
-            </div>
-          </motion.div>
+            </motion.div>
+          )}
         </div>
 
         {/* Quick Actions */}
@@ -238,7 +272,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onTogglePermissions }) => {
             <p className="text-sm text-muted-foreground mb-4">
               Get personalized financial recommendations
             </p>
-            <Button variant="outline" className="w-full">
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => setShowAIInsights(true)}
+            >
               View Insights
             </Button>
           </div>
@@ -249,7 +287,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onTogglePermissions }) => {
             <p className="text-sm text-muted-foreground mb-4">
               Download comprehensive financial report
             </p>
-            <Button variant="outline" className="w-full">
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={handleGeneratePDF}
+            >
               Generate PDF
             </Button>
           </div>
@@ -260,11 +302,27 @@ const Dashboard: React.FC<DashboardProps> = ({ onTogglePermissions }) => {
             <p className="text-sm text-muted-foreground mb-4">
               Create and track financial objectives
             </p>
-            <Button variant="outline" className="w-full">
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => setShowGoals(true)}
+            >
               Manage Goals
             </Button>
           </div>
         </motion.div>
+
+        {/* Modals */}
+        <AIInsightsModal
+          isOpen={showAIInsights}
+          onClose={() => setShowAIInsights(false)}
+          onAskQuestion={handleAskAI}
+        />
+        
+        <GoalsModal
+          isOpen={showGoals}
+          onClose={() => setShowGoals(false)}
+        />
       </div>
     </div>
   );
